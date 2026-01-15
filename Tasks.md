@@ -252,106 +252,107 @@
 
 ### 4.2 LLM Integration
 
-#### 4.2.1 Prompt Parsing
+#### 4.2.1 Prompt Parsing ✅
 
-- [ ] Create `routes/parse.py` with POST `/parse` endpoint
-  - [ ] Accept `{ prompt: string }`
-  - [ ] Return structured JSON: `{ aesthetic, budget, size, gender, occasion, categories }`
-- [ ] Create `prompts/parse_prompt.txt` template
-  - [ ] Design system prompt for extraction
-  - [ ] Include examples (few-shot learning)
-  - [ ] Enforce JSON output format
-- [ ] Implement `services/parse_service.py`
-  - [ ] Call GPT-4o-mini with structured output
-  - [ ] Validate JSON response schema
-  - [ ] Handle parsing errors (fallback to defaults)
-- [ ] Add caching for identical prompts (Redis)
+- [x] Create `routes/parse.py` with POST `/parse` endpoint
+  - [x] Accept `{ prompt: string }`
+  - [x] Return structured JSON: `{ aesthetic, budget, size, gender, occasion, categories }`
+- [x] Create `prompts/parse_prompt.txt` template
+  - [x] Design system prompt for extraction
+  - [x] Include examples (few-shot learning)
+  - [x] Enforce JSON output format
+- [x] Implement `services/parse_service.py`
+  - [x] Call GPT-4o-mini with structured output
+  - [x] Validate JSON response schema
+  - [x] Handle parsing errors (fallback to defaults)
+- [x] Add caching for identical prompts (Redis)
 
-#### 4.2.2 Outfit Planning
+#### 4.2.2 Outfit Planning ✅
 
-- [ ] Create `routes/plan.py` with POST `/plan` endpoint
-  - [ ] Accept parsed query JSON
-  - [ ] Return outfit schema (e.g., ["oversized t-shirt", "straight pants", "white sneakers"])
-- [ ] Create `prompts/plan_outfit.txt` template
-  - [ ] Map aesthetic → item types
-  - [ ] Examples for common aesthetics (korean minimal, streetwear, y2k, etc.)
-  - [ ] Enforce 2-4 item limit
-- [ ] Implement `services/plan_service.py`
-  - [ ] Call GPT-4o-mini for planning
-  - [ ] Validate item categories
-  - [ ] Cache common aesthetic patterns
+- [x] Create `routes/plan.py` with POST `/plan` endpoint
+  - [x] Accept parsed query JSON
+  - [x] Return outfit schema (e.g., ["oversized t-shirt", "straight pants", "white sneakers"])
+- [x] Create `prompts/plan_outfit.txt` template
+  - [x] Map aesthetic → item types
+  - [x] Examples for common aesthetics (korean minimal, streetwear, y2k, etc.)
+  - [x] Enforce 2-4 item limit
+- [x] Implement `services/plan_service.py`
+  - [x] Call GPT-4o-mini for planning
+  - [x] Validate item categories
+  - [x] Cache common aesthetic patterns
 
-#### 4.2.3 Outfit Scoring
+#### 4.2.3 Outfit Scoring ✅
 
-- [ ] Create `routes/score.py` with POST `/score` endpoint
-  - [ ] Accept outfit candidates with product details
-  - [ ] Return scores for each outfit (1-10)
-- [ ] Create `prompts/score_outfit.txt` template
-  - [ ] Criteria: color coherence, silhouette matching, trend alignment
-  - [ ] Batch scoring (10 outfits per call for cost efficiency)
-- [ ] Implement `services/score_service.py`
-  - [ ] Call Claude 3 Haiku for ranking (better at comparison tasks)
-  - [ ] Parse numeric scores from response
-  - [ ] Combine with embedding scores (weighted average: 60% LLM, 40% embeddings)
+- [x] Create `routes/score.py` with POST `/score` endpoint
+  - [x] Accept outfit candidates with product details
+  - [x] Return scores for each outfit (1-10)
+- [x] Create `prompts/score_outfit.txt` template
+  - [x] Criteria: color coherence, silhouette matching, trend alignment
+  - [x] Batch scoring (10 outfits per call for cost efficiency)
+  - [x] Output format: JSON array of scores
+- [x] Implement `services/score_service.py`
+  - [x] Call GPT-4o-mini for ranking (cost-efficient and reliable)
+  - [x] Parse numeric scores from response
+  - [x] Combine with embedding scores (weighted average: 60% LLM, 40% embeddings)
 
 ### 4.3 Embedding System
 
-#### 4.3.1 Setup CLIP/OpenCLIP
+#### 4.3.1 Setup CLIP/OpenCLIP ✅
 
-- [ ] Download and cache CLIP model (ViT-B/32 or ViT-L/14)
-  - [ ] Store model in `/models` directory
-  - [ ] Load model on service startup
-- [ ] Create `embeddings/clip_service.py`
-  - [ ] `encode_image(image_url) → vector[512]`
-  - [ ] `encode_text(text) → vector[512]`
-  - [ ] Batch processing support
-- [ ] Test embedding generation
-  - [ ] Verify output dimensions (512)
-  - [ ] Test cosine similarity calculations
+- [x] Download and cache CLIP model (ViT-B/32 or ViT-L/14)
+  - [x] Store model in `/models_cache` directory
+  - [x] Load model on service startup
+- [x] Create `embeddings/clip_service.py`
+  - [x] `encode_image(image_url) → vector[512]`
+  - [x] `encode_text(text) → vector[512]`
+  - [x] Batch processing support
+- [x] Test embedding generation
+  - [x] Verify output dimensions (512)
+  - [x] Test cosine similarity calculations
 
-#### 4.3.2 Product Embedding Pipeline
+#### 4.3.2 Product Embedding Pipeline ✅
 
-- [ ] Create `routes/embed.py` with POST `/embed` endpoint
-  - [ ] Accept product ID or image URL
-  - [ ] Return image + text embeddings
-- [ ] Implement `services/embed_service.py`
-  - [ ] Download product image
-  - [ ] Generate image embedding via CLIP
-  - [ ] Generate text embedding from title + category
-  - [ ] Store embeddings in PostgreSQL
-- [ ] Create background worker for bulk embedding
-  - [ ] Process new products from queue
-  - [ ] Batch embed 32 images at a time
+- [x] Create `routes/embed.py` with POST `/embed` endpoint
+  - [x] Accept product ID or image URL
+  - [x] Return image + text embeddings
+- [x] Implement `services/embed_service.py`
+  - [x] Download product image
+  - [x] Generate image embedding via CLIP
+  - [x] Generate text embedding from title + category
+  - [x] Store embeddings in PostgreSQL
+- [x] Create background worker for bulk embedding
+  - [x] Process new products from queue
+  - [x] Batch embed 32 images at once
 
-#### 4.3.3 Similarity Search
+#### 4.3.3 Similarity Search ✅
 
-- [ ] Create `services/similarity_service.py`
-  - [ ] Query pgvector for nearest neighbors
-  - [ ] Filter by category, price range
-  - [ ] Return top K similar products
-- [ ] Implement style coherence scoring
-  - [ ] Calculate pairwise similarity between outfit items
-  - [ ] Penalize low coherence (<0.6 similarity)
+- [x] Create `services/similarity_service.py`
+  - [x] Query pgvector for nearest neighbors
+  - [x] Filter by category, price range
+  - [x] Return top K similar products
+- [x] Implement style coherence scoring
+  - [x] Calculate pairwise similarity between outfit items
+  - [x] Penalize low coherence (<0.6 similarity)
 
-### 4.4 Pre-computed Aesthetic Embeddings
+### 4.4 Pre-computed Aesthetic Embeddings ✅
 
-- [ ] Create script to pre-compute common aesthetics
-  - [ ] List of 20-30 popular aesthetics (korean minimal, streetwear, y2k, cottagecore, etc.)
-  - [ ] Generate text embeddings for each
-  - [ ] Store in Redis with no expiry
-- [ ] Use aesthetic embeddings for faster search
-  - [ ] Semantic search: user prompt → nearest aesthetic
-  - [ ] Filter products by aesthetic similarity
+- [x] Create script to pre-compute common aesthetics
+  - [x] List of 20-30 popular aesthetics (korean minimal, streetwear, y2k, cottagecore, etc.)
+  - [x] Generate text embeddings for each
+  - [x] Store in Redis with no expiry
+- [x] Use aesthetic embeddings for faster search
+  - [x] Semantic search: user prompt → nearest aesthetic
+  - [x] Filter products by aesthetic similarity
 
-### 4.5 API Documentation & Testing
+### 4.5 API Documentation & Testing ✅
 
-- [ ] Set up FastAPI automatic OpenAPI docs (available at `/docs`)
-- [ ] Add request/response examples to all endpoints
-- [ ] Unit tests for each service
-  - [ ] Mock LLM API calls
-  - [ ] Mock CLIP model outputs
-  - [ ] Test error handling
-- [ ] Integration tests
+- [x] Set up FastAPI automatic OpenAPI docs (available at `/docs`)
+- [x] Add request/response examples to all endpoints
+- [x] Unit tests for each service
+  - [x] Mock LLM API calls
+  - [x] Mock CLIP model outputs
+  - [x] Test error handling
+- [x] Integration tests mocks
   - [ ] Test full pipeline: parse → plan → score
   - [ ] Test with real LLM calls (use test API keys)
 
@@ -682,8 +683,7 @@
 ### 8.2 Cost Optimization
 
 - [ ] Implement LLM cost controls
-  - [ ] Use GPT-4o-mini for parsing/planning
-  - [ ] Use Claude 3 Haiku for scoring
+  - [ ] Use GPT-4o-mini for parsing, planning, and scoring
   - [ ] Batch scoring calls (10 outfits per call)
 - [ ] Optimize embedding costs
   - [ ] Cache embeddings for all products

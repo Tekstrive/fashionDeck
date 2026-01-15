@@ -3,9 +3,9 @@
  * 
  * Handles communication with the FastAPI ML service for:
  * - Prompt parsing (GPT-4o-mini)
- * - Outfit planning
+ * - Outfit planning (GPT-4o-mini)
  * - Embedding scoring (CLIP)
- * - Outfit ranking (Claude 3 Haiku)
+ * - Outfit ranking (GPT-4o-mini)
  * 
  * Features:
  * - Circuit breaker pattern for fault tolerance

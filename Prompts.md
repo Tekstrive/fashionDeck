@@ -449,7 +449,7 @@ Task: Initialize FastAPI ML microservice in apps/ml-service.
    - app/config.py (environment config)
 2. Create requirements.txt with:
    - fastapi, uvicorn, pydantic
-   - openai, anthropic (LLM SDKs)
+   - openai (LLM SDK)
    - transformers, torch (for CLIP)
    - psycopg2, redis (database clients)
    - pillow (image processing)
@@ -551,12 +551,12 @@ Show me the planning prompt template and service code.
 ### **Prompt 4.2.3: Outfit Scoring with LLM**
 
 ```
-Task: Implement outfit coherence scoring using Claude 3 Haiku.
+Task: Implement outfit coherence scoring using GPT-4o-mini.
 
 **Context:**
 - Planning works (Task 4.2.2 completed)
 - Need to score assembled outfits 1-10 based on coherence
-- Using Claude 3 Haiku (better at ranking tasks than GPT)
+- Using GPT-4o-mini for cost efficiency and low latency
 
 **Requirements:**
 1. Create POST /score endpoint in app/routes/score.py:
@@ -567,7 +567,7 @@ Task: Implement outfit coherence scoring using Claude 3 Haiku.
    - Batch scoring (10 outfits per call for cost efficiency)
    - Output format: JSON array of scores
 3. Implement app/services/score_service.py:
-   - Call Anthropic Claude 3 Haiku API
+   - Call OpenAI API with GPT-4o-mini
    - Parse numeric scores from response
    - Validate scores are 1-10
    - Handle API errors gracefully
@@ -580,7 +580,7 @@ Task: Implement outfit coherence scoring using Claude 3 Haiku.
 
 **Reference:** PRD.md Section 8.5, Tasks.md Phase 4.2.3
 
-**API Key:** Use environment variable ANTHROPIC_API_KEY
+**API Key:** Use environment variable OPENAI_API_KEY
 
 Show me the scoring prompt and service implementation.
 ```

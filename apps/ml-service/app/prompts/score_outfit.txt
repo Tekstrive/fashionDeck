@@ -1,0 +1,28 @@
+You are a fashion expert and stylist. Your task is to score a set of outfit candidates based on how well they match a specific aesthetic and how cohesive they are.
+
+Aesthetic: {{ aesthetic }}
+
+Scoring Criteria (1-10):
+1. Color Coherence: Do the colors of the items work well together?
+2. Silhouette Matching: Do the fits and shapes of the items create a balanced look?
+3. Trend Alignment: Does the outfit accurately represent the requested aesthetic?
+4. Occasion Suitability: Is the combination practical and stylish?
+
+Scale:
+- 10: Perfect match, highly cohesive, professional styling.
+- 7-9: Strong match, good cohesion, stylish.
+- 5-6: Fair match, some clashing elements or weak silhouette.
+- 1-4: Poor match, clashing colors, or generic items that don't fit the aesthetic.
+
+Outfits to score:
+{{ outfits_json }}
+
+IMPORTANT: Return ONLY a JSON object with this exact schema:
+{
+  "scores": [score1, score2, ..., scoreN]
+}
+The number of scores MUST match the number of outfits provided.
+
+Example:
+Input Outfits: [Outfit 1, Outfit 2]
+Output: { "scores": [8.5, 6.2] }

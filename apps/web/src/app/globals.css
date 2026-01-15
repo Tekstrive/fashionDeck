@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 26, 26, 25; /* Darker Shadow Grey */
+  --background-start-rgb: 251, 251, 249; /* Ivory Light */
+  --background-end-rgb: 255, 255, 255; /* Pure White */
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --foreground-rgb: 232, 237, 223;
+    --background-start-rgb: 26, 26, 25;
+    --background-end-rgb: 10, 10, 10;
+  }
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+}
+
+@layer components {
+  .vibrant-gradient {
+    @apply bg-gradient-to-r from-tuscan to-tuscan-light;
+  }
+
+  .glass-card {
+    @apply bg-white/40 backdrop-blur-xl border border-shadow/5 shadow-premium;
+  }
+
+  .dark .glass-card {
+    @apply bg-shadow/40 backdrop-blur-xl border border-ivory/10 shadow-premium;
+  }
+
+  .premium-button {
+    @apply bg-shadow text-ivory px-10 py-5 rounded-sm font-bold tracking-[0.4em] uppercase shadow-premium hover:bg-shadow-light transition-all duration-500 hover:scale-[1.02] active:scale-[0.98];
+  }
+
+  .tuscan-glow {
+    @apply shadow-[0_0_40px_-10px_rgba(245,203,92,0.3)];
+  }
+
+  .serif-italic-highlight {
+    @apply font-serif italic relative inline-block;
+  }
+
+  .serif-italic-highlight::after {
+    content: "";
+    @apply absolute -bottom-1 left-0 w-full h-1 bg-tuscan/30 -z-10;
+  }
+
+  .no-scrollbar::-webkit-scrollbar {
+    display: none;
+  }
+  .no-scrollbar {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
