@@ -10,6 +10,8 @@ FastAPI microservice for AI/ML operations:
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.exceptions import RequestValidationError
+from starlette.exceptions import HTTPException as StarletteHTTPException
 from contextlib import asynccontextmanager
 from loguru import logger
 import sys
@@ -17,6 +19,11 @@ import sys
 from app.config import get_settings
 from app.routes import parse, plan, score, embed, similarity, aesthetic
 from app.embeddings.clip_service import get_clip_service
+from app.exceptions import (
+    http_exception_handler,
+    validation_exception_handler,
+    general_exception_handler,
+)
 
 # Configure logger
 logger.remove()
@@ -83,6 +90,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Register exception handlers
+app.add_exception_handler(StarletteHTTPException, http_exception_handler)
+app.add_exception_handler(RequestValidationError, validation_exception_handler)
+app.add_exception_handler(Exception, general_exception_handler)
 
 # Include routers
 app.include_router(parse.router)

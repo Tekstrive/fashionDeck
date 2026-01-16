@@ -12,6 +12,7 @@ import redis.asyncio as redis
 
 from app.config import get_settings
 from app.models import ParsedPrompt
+from app.utils.retry import retry_async, RetryConfigs
 
 settings = get_settings()
 
@@ -83,6 +84,7 @@ class ParseService:
         except Exception as e:
             logger.warning(f"Cache storage error: {e}")
     
+    @retry_async(RetryConfigs.LLM_API)
     async def parse_prompt(self, prompt: str) -> tuple[ParsedPrompt, bool]:
         """
         Parse natural language prompt into structured data.
@@ -99,7 +101,7 @@ class ParseService:
         if cached:
             return cached, True
         
-        # Call OpenAI API
+        # Call OpenAI API (with automatic retries via decorator)
         try:
             logger.info(f"Parsing prompt with GPT-4o-mini: '{prompt}'")
             

@@ -1,5 +1,6 @@
 import { Module } from '@nestjs/common';
-import { ConfigModule } from '@nestjs/config';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { ThrottlerModule } from '@nestjs/throttler';
 import { WinstonModule } from 'nest-winston';
 import { validate } from './config/env.validation';
 import { loggerConfig } from './config/logger.config';
@@ -25,6 +26,18 @@ import { OutfitModule } from './modules/outfit/outfit.module';
     WinstonModule.forRoot(
       loggerConfig(process.env.NODE_ENV !== 'production')
     ),
+
+    // Rate Limiting
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ([
+        {
+          ttl: config.get('RATE_LIMIT_WINDOW_MS', 60000),
+          limit: config.get('RATE_LIMIT_MAX_REQUESTS', 10),
+        },
+      ]),
+    }),
 
     // Core Modules
     DatabaseModule,

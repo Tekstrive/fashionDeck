@@ -1171,3 +1171,619 @@ Please provide:
 5. **Update this file** if you discover better prompts during development
 
 **Remember:** The goal is zero context loss and zero errors. Be explicit, provide context, reference PRD/Tasks.md.
+
+---
+
+## **PRODUCTION READINESS PROMPT**
+
+````
+Task: Make the FashionDeck application production-ready for deployment.
+
+**Context:**
+- Project: FashionDeck - AI-powered fashion outfit recommendation platform
+- Current State: Development complete through Phase 4 (Backend API, ML Service, Frontend partially complete)
+- Monorepo structure with Turborepo (apps/api, apps/ml-service, apps/web, packages/types, packages/utils)
+- Tech Stack: Next.js 14, NestJS, FastAPI, PostgreSQL with pgvector, Redis
+- Target Deployment: Vercel (Frontend), Railway (Backend API, ML Service, Databases)
+- Reference: PRD.md, Tasks.md, SETUP.md
+
+**Objective:**
+Transform the current development codebase into a production-ready application that can be deployed to Vercel and Railway with confidence. This includes security hardening, performance optimization, comprehensive testing, proper error handling, monitoring setup, and deployment configuration.
+
+---
+
+### **PHASE 1: SECURITY HARDENING**
+
+#### 1.1 Environment Variables & Secrets Management
+
+- [ ] **Audit all environment variables**
+  - Review all `.env` files across services
+  - Ensure NO API keys, secrets, or credentials are hardcoded in source code
+  - Verify all sensitive data is loaded from environment variables
+  - Check for accidental commits of `.env` files in git history
+
+- [ ] **Create production environment templates**
+  - Update `.env.example` for each service (apps/api, apps/ml-service, apps/web)
+  - Document all required environment variables with descriptions
+  - Specify which variables are required vs optional
+  - Add validation for required environment variables on startup
+
+- [ ] **Implement environment variable validation**
+  - Backend API: Use class-validator to validate all env vars on startup
+  - ML Service: Add Pydantic settings validation
+  - Frontend: Validate NEXT_PUBLIC_ variables
+  - Fail fast with clear error messages if required vars missing
+
+#### 1.2 API Security
+
+- [ ] **Implement rate limiting**
+  - Add rate limiting to POST /api/query endpoint (10 requests/minute per IP)
+  - Add global rate limiting (100 requests/minute per IP)
+  - Use Redis for distributed rate limiting
+  - Return proper 429 Too Many Requests responses
+
+- [ ] **Input validation and sanitization**
+  - Validate all user inputs (prompt length: 10-200 chars)
+  - Sanitize inputs to prevent XSS attacks
+  - Validate query parameters and request bodies
+  - Add request size limits (max 1MB)
+
+- [ ] **CORS configuration**
+  - Configure CORS to allow only production frontend domain
+  - Set proper allowed methods (GET, POST)
+  - Configure allowed headers
+  - Enable credentials if needed
+
+- [ ] **Security headers**
+  - Add helmet.js to NestJS backend
+  - Configure CSP (Content Security Policy)
+  - Add X-Frame-Options, X-Content-Type-Options
+  - Set Strict-Transport-Security for HTTPS
+
+- [ ] **SQL injection prevention**
+  - Verify all database queries use parameterized queries
+  - Never concatenate user input into SQL
+  - Use ORM/query builder properly (TypeORM/Prisma)
+
+#### 1.3 Authentication & Authorization (Future-Ready)
+
+- [ ] **Prepare for authentication**
+  - Add placeholder for JWT authentication middleware
+  - Document authentication strategy for future implementation
+  - Ensure API endpoints can easily add auth guards later
+
+---
+
+### **PHASE 2: ERROR HANDLING & RESILIENCE**
+
+#### 2.1 Comprehensive Error Handling
+
+- [ ] **Backend API error handling**
+  - Implement global exception filter in NestJS
+  - Catch and log all unhandled exceptions
+  - Return consistent error response format:
+    ```json
+    {
+      "error": "Error type",
+      "message": "User-friendly message",
+      "statusCode": 400,
+      "timestamp": "ISO timestamp"
+    }
+    ```
+  - Never expose internal error details to users
+  - Log full error stack traces server-side
+
+- [ ] **ML Service error handling**
+  - Add global exception handler in FastAPI
+  - Handle LLM API failures gracefully (OpenAI, Anthropic)
+  - Implement fallback responses when ML service fails
+  - Add timeout handling (5s per LLM call)
+  - Return proper HTTP status codes
+
+- [ ] **Frontend error handling**
+  - Add error boundaries for React components
+  - Implement toast notifications for user-facing errors
+  - Handle API failures gracefully (show retry button)
+  - Add loading states for all async operations
+  - Implement offline detection
+
+#### 2.2 Circuit Breaker Pattern
+
+- [ ] **Implement circuit breaker for ML service**
+  - If ML service fails 5 times in 1 minute, open circuit
+  - Return cached/fallback responses when circuit open
+  - Auto-close circuit after 30 seconds
+  - Log circuit state changes
+
+- [ ] **Implement circuit breaker for marketplace APIs**
+  - Prevent cascading failures when Amazon/Flipkart APIs fail
+  - Return partial results if one marketplace fails
+  - Log marketplace availability
+
+#### 2.3 Retry Logic
+
+- [ ] **Add retry logic for external APIs**
+  - Retry LLM API calls (3 retries with exponential backoff)
+  - Retry marketplace API calls (2 retries)
+  - Retry database connections on startup
+  - Add jitter to prevent thundering herd
+
+---
+
+### **PHASE 3: PERFORMANCE OPTIMIZATION**
+
+#### 3.1 Database Optimization
+
+- [ ] **Verify database indexes**
+  - Ensure indexes exist on frequently queried columns
+  - Verify pgvector IVFFlat indexes are created
+  - Check index usage with EXPLAIN ANALYZE
+  - Add composite indexes where needed
+
+- [ ] **Connection pooling**
+  - Configure proper connection pool size (10-20 connections)
+  - Set connection timeout (30s)
+  - Set idle timeout (10 minutes)
+  - Monitor connection pool usage
+
+- [ ] **Query optimization**
+  - Review all database queries for N+1 problems
+  - Use eager loading where appropriate
+  - Limit result sets (max 100 products per category)
+  - Add query timeouts
+
+#### 3.2 Caching Strategy
+
+- [ ] **Implement Redis caching**
+  - Cache product search results (6-hour TTL)
+  - Cache parsed prompts (24-hour TTL)
+  - Cache aesthetic embeddings (no expiry)
+  - Cache LLM responses for identical prompts
+  - Implement cache warming for popular queries
+
+- [ ] **Frontend caching**
+  - Configure Next.js ISR for landing page
+  - Add HTTP cache headers for static assets
+  - Implement SWR for client-side data fetching
+  - Cache affiliate links
+
+#### 3.3 Parallel Processing
+
+- [ ] **Optimize backend orchestration**
+  - Run marketplace fetches in parallel (Promise.all)
+  - Run LLM planning + product pre-fetch concurrently
+  - Batch LLM scoring calls (10 outfits per call)
+  - Measure and log latency for each step
+
+#### 3.4 Frontend Performance
+
+- [ ] **Next.js optimization**
+  - Use next/image for all product images
+  - Implement lazy loading for below-fold content
+  - Enable code splitting for heavy components
+  - Optimize bundle size (analyze with @next/bundle-analyzer)
+  - Prefetch critical routes
+
+- [ ] **Asset optimization**
+  - Compress images (WebP format)
+  - Minify CSS and JavaScript
+  - Use CDN for static assets
+  - Implement responsive images
+
+---
+
+### **PHASE 4: TESTING & QUALITY ASSURANCE**
+
+#### 4.1 Unit Testing
+
+- [ ] **Backend API tests**
+  - Test all service methods (80% coverage target)
+  - Mock external dependencies (ML service, marketplaces)
+  - Test error handling paths
+  - Test validation logic
+  - Run tests: `npm test` in apps/api
+
+- [ ] **ML Service tests**
+  - Test all service functions
+  - Mock LLM API calls
+  - Mock CLIP model outputs
+  - Test error handling
+  - Run tests: `pytest` in apps/ml-service
+
+- [ ] **Frontend tests**
+  - Test critical components (OutfitCard, PromptInput)
+  - Test user interactions
+  - Test error states
+  - Run tests: `npm test` in apps/web
+
+#### 4.2 Integration Testing
+
+- [ ] **End-to-end flow testing**
+  - Test: User prompt → Backend → ML Service → Response
+  - Test with real test database (not production)
+  - Test marketplace adapter integration
+  - Test Redis caching
+  - Verify data persistence
+
+#### 4.3 Performance Testing
+
+- [ ] **Load testing**
+  - Use k6 or Artillery for load tests
+  - Test with 10 concurrent users (baseline)
+  - Test with 100 concurrent users (target)
+  - Measure p50, p95, p99 latencies
+  - Target: p95 ≤ 7 seconds end-to-end
+
+- [ ] **Frontend performance audit**
+  - Run Lighthouse audit (target score ≥90)
+  - Measure Core Web Vitals:
+    - LCP < 2.5s
+    - FID < 100ms
+    - CLS < 0.1
+  - Test on mobile devices
+  - Test on slow 3G network
+
+---
+
+### **PHASE 5: DEPLOYMENT CONFIGURATION**
+
+#### 5.1 Docker & Containerization
+
+- [ ] **Verify Dockerfiles**
+  - Backend API Dockerfile (apps/api/Dockerfile)
+    - Multi-stage build (dependencies → build → production)
+    - Proper layer caching
+    - Security: Run as non-root user
+    - Health check endpoint
+  - ML Service Dockerfile (apps/ml-service/Dockerfile)
+    - Python 3.11-slim base image
+    - Proper dependency installation
+    - Model caching strategy
+    - Health check endpoint
+
+- [ ] **Test Docker builds locally**
+  - Build all images: `docker-compose build`
+  - Run all services: `docker-compose up`
+  - Verify health checks pass
+  - Test inter-service communication
+
+#### 5.2 Frontend Deployment (Vercel)
+
+- [ ] **Configure Vercel settings**
+  - Set root directory: `apps/web`
+  - Build command: `cd ../.. && npm run build --filter=web`
+  - Output directory: `apps/web/.next`
+  - Node.js version: 20.x
+  - Install command: `npm install`
+
+- [ ] **Set environment variables in Vercel**
+  - NEXT_PUBLIC_API_URL (backend API URL)
+  - Any other NEXT_PUBLIC_ variables
+  - Verify variables are set for production environment
+
+- [ ] **Configure custom domain (if applicable)**
+  - Add custom domain in Vercel dashboard
+  - Configure DNS records
+  - Enable automatic HTTPS
+
+- [ ] **Test production build locally**
+  - Run: `npm run build` in apps/web
+  - Run: `npm start` to test production build
+  - Verify no build errors
+  - Test all pages and features
+
+#### 5.3 Backend API Deployment (Railway)
+
+- [ ] **Configure Railway project**
+  - Create new Railway project for API
+  - Connect GitHub repository
+  - Set Dockerfile path: `apps/api/Dockerfile`
+  - Set port: 3001
+  - Enable auto-deploy on push to main branch
+
+- [ ] **Set environment variables in Railway**
+  - DATABASE_URL (PostgreSQL connection string)
+  - REDIS_URL (Redis connection string)
+  - ML_SERVICE_URL (ML service URL)
+  - NODE_ENV=production
+  - All API keys (Amazon, Flipkart affiliates)
+
+- [ ] **Configure health check**
+  - Add GET /health endpoint
+  - Return 200 OK with service status
+  - Railway will use this for health monitoring
+
+#### 5.4 ML Service Deployment (Railway)
+
+- [ ] **Configure Railway project**
+  - Create new Railway project for ML service
+  - Connect GitHub repository
+  - Set Dockerfile path: `apps/ml-service/Dockerfile`
+  - Set port: 8000
+  - Enable auto-deploy on push to main branch
+
+- [ ] **Set environment variables in Railway**
+  - DATABASE_URL (PostgreSQL connection string)
+  - REDIS_URL (Redis connection string)
+  - OPENAI_API_KEY
+  - ANTHROPIC_API_KEY (if using Claude)
+  - PYTHONUNBUFFERED=1
+
+- [ ] **Configure model caching**
+  - Mount persistent volume for CLIP models
+  - Pre-download models during build
+  - Verify models load on startup
+
+#### 5.5 Database Deployment (Railway)
+
+- [ ] **PostgreSQL setup**
+  - Create PostgreSQL database on Railway
+  - Select PostgreSQL with pgvector plugin
+  - Note connection string
+  - Configure connection limits
+
+- [ ] **Run database migrations**
+  - Execute migration scripts on production database
+  - Verify tables created correctly
+  - Verify pgvector extension enabled
+  - Verify indexes created
+
+- [ ] **Redis setup**
+  - Create Redis instance on Railway
+  - Note connection URL
+  - Configure max memory policy (allkeys-lru)
+  - Test connection from backend
+
+---
+
+### **PHASE 6: MONITORING & OBSERVABILITY**
+
+#### 6.1 Logging
+
+- [ ] **Structured logging**
+  - All services log to stdout in JSON format
+  - Include: timestamp, level, service, message, context
+  - Log all errors with stack traces
+  - Log performance metrics (latency per step)
+  - Railway automatically captures stdout logs
+
+- [ ] **Log levels**
+  - Production: INFO level minimum
+  - Development: DEBUG level
+  - Never log sensitive data (API keys, user data)
+
+#### 6.2 Error Tracking
+
+- [ ] **Set up Sentry**
+  - Create Sentry project for each service
+  - Install Sentry SDK in backend API
+  - Install Sentry SDK in ML service
+  - Install Sentry SDK in frontend
+  - Configure error sampling (100% for now)
+  - Set up alerts for critical errors
+
+- [ ] **Configure error notifications**
+  - Alert on critical errors immediately
+  - Daily digest for warnings
+  - Track error trends over time
+
+#### 6.3 Performance Monitoring
+
+- [ ] **Add performance tracking**
+  - Track API endpoint latencies
+  - Track ML service call durations
+  - Track database query times
+  - Track external API call times
+  - Log to structured logs for analysis
+
+- [ ] **Set up uptime monitoring (optional)**
+  - Use UptimeRobot or Checkly
+  - Ping /health endpoint every 5 minutes
+  - Alert if service down for >2 minutes
+
+#### 6.4 Analytics
+
+- [ ] **Add Google Analytics 4 (optional)**
+  - Track page views
+  - Track search queries (anonymized)
+  - Track affiliate link clicks
+  - Track conversion funnel
+
+---
+
+### **PHASE 7: DOCUMENTATION**
+
+#### 7.1 API Documentation
+
+- [ ] **Backend API documentation**
+  - Set up Swagger/OpenAPI in NestJS
+  - Document all endpoints with examples
+  - Add request/response schemas
+  - Document error codes
+  - Serve docs at /api/docs
+
+- [ ] **ML Service documentation**
+  - FastAPI auto-generates docs at /docs
+  - Add request/response examples
+  - Document all endpoints
+  - Add usage examples
+
+#### 7.2 Deployment Documentation
+
+- [ ] **Update README.md**
+  - Add project overview
+  - Add architecture diagram
+  - Add setup instructions
+  - Add deployment guide
+  - Add troubleshooting section
+
+- [ ] **Create DEPLOYMENT.md**
+  - Document deployment process for each service
+  - Document environment variables
+  - Document rollback procedure
+  - Document scaling guidelines
+
+#### 7.3 Runbook
+
+- [ ] **Create RUNBOOK.md**
+  - How to deploy updates
+  - How to rollback deployments
+  - How to monitor service health
+  - How to handle incidents
+  - How to scale services
+  - Common issues and solutions
+
+---
+
+### **PHASE 8: PRE-LAUNCH CHECKLIST**
+
+#### 8.1 Security Audit
+
+- [ ] No API keys in source code (all in env vars)
+- [ ] Rate limiting enabled on all public endpoints
+- [ ] Input validation on all endpoints
+- [ ] CORS properly configured
+- [ ] Security headers configured
+- [ ] HTTPS enabled (automatic on Vercel/Railway)
+- [ ] SQL injection prevention verified
+- [ ] XSS prevention verified
+
+#### 8.2 Performance Audit
+
+- [ ] Load tests passing (100 concurrent users)
+- [ ] p95 latency ≤ 7 seconds
+- [ ] Database indexes performant
+- [ ] Caching working correctly
+- [ ] Frontend Lighthouse score ≥ 90
+- [ ] Core Web Vitals passing
+
+#### 8.3 Functionality Audit
+
+- [ ] All critical user flows tested end-to-end
+- [ ] Error handling working correctly
+- [ ] Affiliate links generating correctly
+- [ ] All marketplace adapters working
+- [ ] ML service responding correctly
+- [ ] Database queries working
+- [ ] Redis caching working
+
+#### 8.4 Legal & Compliance
+
+- [ ] Privacy policy published (if collecting user data)
+- [ ] Terms of service published
+- [ ] Affiliate disclosure visible
+- [ ] Cookie consent (if applicable)
+- [ ] GDPR compliance (if applicable)
+
+#### 8.5 Deployment Verification
+
+- [ ] All services deployed successfully
+- [ ] All environment variables set correctly
+- [ ] Database migrations run successfully
+- [ ] Health checks passing
+- [ ] Logs flowing correctly
+- [ ] Error tracking working
+- [ ] Custom domain configured (if applicable)
+
+---
+
+### **PHASE 9: POST-DEPLOYMENT**
+
+#### 9.1 Smoke Testing
+
+- [ ] Test landing page loads
+- [ ] Test search functionality end-to-end
+- [ ] Test with various prompts
+- [ ] Test affiliate links redirect correctly
+- [ ] Test error scenarios
+- [ ] Test on mobile devices
+- [ ] Test on different browsers
+
+#### 9.2 Monitoring Setup
+
+- [ ] Verify logs flowing to Railway
+- [ ] Verify errors reporting to Sentry
+- [ ] Set up alerts for critical issues
+- [ ] Monitor resource usage (CPU, memory, database)
+- [ ] Monitor API latency
+- [ ] Monitor error rates
+
+#### 9.3 Performance Baseline
+
+- [ ] Measure baseline latency
+- [ ] Measure baseline error rate
+- [ ] Measure baseline resource usage
+- [ ] Set up dashboards for monitoring
+
+---
+
+### **SUCCESS CRITERIA**
+
+The application is production-ready when:
+
+1. ✅ All security measures implemented (rate limiting, input validation, CORS, security headers)
+2. ✅ Comprehensive error handling in place (no unhandled exceptions)
+3. ✅ Performance targets met (p95 latency ≤ 7s, Lighthouse ≥ 90)
+4. ✅ All tests passing (unit, integration, E2E)
+5. ✅ All services deployed successfully to production
+6. ✅ Monitoring and error tracking configured
+7. ✅ Documentation complete (README, API docs, runbook)
+8. ✅ Smoke tests passing in production
+9. ✅ No hardcoded secrets or API keys in code
+10. ✅ All environment variables configured correctly
+
+---
+
+### **EXECUTION APPROACH**
+
+1. **Start with security** - This is non-negotiable for production
+2. **Then error handling** - Ensure graceful degradation
+3. **Then performance** - Optimize for user experience
+4. **Then testing** - Verify everything works
+5. **Then deployment** - Configure all services
+6. **Then monitoring** - Set up observability
+7. **Finally documentation** - Enable future maintenance
+
+**Work systematically through each phase. Do not skip steps.**
+
+**For each task:**
+- Verify completion with tests or manual verification
+- Document any issues or blockers
+- Update this checklist as you progress
+
+**Reference Documents:**
+- PRD.md - Product requirements and architecture
+- Tasks.md - Development task breakdown
+- SETUP.md - Local development setup
+- .env.example files - Required environment variables
+
+**Target Timeline:**
+- Security Hardening: 1-2 days
+- Error Handling: 1 day
+- Performance Optimization: 1-2 days
+- Testing: 1-2 days
+- Deployment Configuration: 1 day
+- Monitoring Setup: 0.5 day
+- Documentation: 0.5 day
+- **Total: 6-9 days**
+
+**After Completion:**
+- Run through entire pre-launch checklist
+- Perform smoke testing in production
+- Monitor for 24 hours before announcing launch
+- Be ready to rollback if critical issues found
+
+---
+
+**IMPORTANT NOTES:**
+
+1. **Never commit secrets** - Always use environment variables
+2. **Test everything** - Don't assume it works in production
+3. **Monitor actively** - First 48 hours are critical
+4. **Have rollback plan** - Know how to revert each service
+5. **Document everything** - Future you will thank you
+6. **Start small** - Soft launch to small group first
+7. **Iterate quickly** - Fix issues as they arise
+
+**This is a comprehensive checklist. Work through it systematically and thoroughly.**
+````
